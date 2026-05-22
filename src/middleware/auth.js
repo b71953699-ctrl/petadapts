@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 
+const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only';
+
 const auth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -9,7 +11,7 @@ const auth = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, jwtSecret);
 
     const [users] = await db.query('SELECT userId, username, email, role FROM users WHERE userId = ?', [decoded.userId]);
 

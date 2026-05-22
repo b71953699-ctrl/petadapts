@@ -7,6 +7,8 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only';
+
 // Register
 router.post('/register', [
   body('username').isLength({ min: 3 }).trim().escape(),
@@ -34,7 +36,7 @@ router.post('/register', [
       [username, hashedPassword, email, role]
     );
 
-    const token = jwt.sign({ userId: result.insertId, role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: result.insertId, role }, jwtSecret, {
       expiresIn: process.env.JWT_EXPIRES_IN || '7d'
     });
 
@@ -72,7 +74,7 @@ router.post('/login', [
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user.userId, role: user.role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.userId, role: user.role }, jwtSecret, {
       expiresIn: process.env.JWT_EXPIRES_IN || '7d'
     });
 
