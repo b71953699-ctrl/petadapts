@@ -96,13 +96,11 @@ router.get('/reports', async (req, res) => {
     const [pendingRequests] = await db.query("SELECT COUNT(*) as count FROM adoption_requests WHERE status = 'pending'");
 
     res.json({
-      reports: {
-        totalUsers: totalUsers[0].count,
-        totalPets: totalPets[0].count,
-        availablePets: availablePets[0].count,
-        totalAdoptions: totalAdoptions[0].count,
-        pendingRequests: pendingRequests[0].count
-      }
+      totalUsers: totalUsers[0].count,
+      totalPets: totalPets[0].count,
+      availablePets: availablePets[0].count,
+      totalAdoptions: totalAdoptions[0].count,
+      pendingRequests: pendingRequests[0].count
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

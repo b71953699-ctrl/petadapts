@@ -84,7 +84,7 @@ router.delete('/pets/:id', async (req, res) => {
 router.get('/adoption-requests', async (req, res) => {
   try {
     const [requests] = await db.query(`
-      SELECT ar.*, p.name as petName, p.type as petType, u.username as adopterName, u.email as adopterEmail
+      SELECT ar.*, p.name as petName, p.type as petType, u.username, u.email as adopterEmail
       FROM adoption_requests ar
       JOIN pets p ON ar.petId = p.petId
       JOIN users u ON ar.adopterId = u.userId
@@ -134,6 +134,22 @@ router.post('/adoption-requests/:id/reject', async (req, res) => {
     );
 
     res.json({ message: 'Adoption request rejected' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get staff statistics
+router.get('/stats', async (req, res) => {
+  try {
+    const [total] = await db.query('SELECT COUNT(*) as count FROM pets');
+    const [available] = await db.query("SELECT COUNT(*) as count FROM pets WHERE status = 'available'");
+    const [pending] = await db.query("SELECT COUNT(*) as count FROM adoption_requests WHERE status = 'pending'");
+    res.json({
+      totalPets: total[0].count,
+      availablePets: available[0].count,
+      pendingRequests: pending[0].count
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
