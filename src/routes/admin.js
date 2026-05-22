@@ -23,7 +23,7 @@ router.post('/users', [
   body('username').isLength({ min: 3 }).trim().escape(),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
-  body('role').isIn(['admin', 'staff', 'adopter'])
+  body('role').isIn(['admin', 'shelter_staff', 'adopter'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -49,9 +49,16 @@ router.post('/users', [
 router.put('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role } = req.body;
-    await db.query('UPDATE users SET username = ?, email = ?, role = ? WHERE userId = ?',
-      [username, email, role, id]);
+    const { email, role, password } = req.body;
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await db.query('UPDATE users SET email = ?, role = ?, password = ? WHERE userId = ?',
+        [email, role, hashedPassword, id]);
+    } else {
+      await db.query('UPDATE users SET email = ?, role = ? WHERE userId = ?',
+        [email, role, id]);
+    }
     res.json({ message: 'User updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
