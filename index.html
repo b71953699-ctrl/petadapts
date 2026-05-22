@@ -351,7 +351,7 @@
             document.getElementById('logout-btn').classList.remove('hidden');
 
             // Show role-specific tabs
-            document.getElementById('tab-my-requests').classList.toggle('hidden', user.role === 'shelter_staff');
+            document.getElementById('tab-my-requests').classList.toggle('hidden', user.role !== 'adopter');
             document.getElementById('tab-staff').classList.toggle('hidden', user.role === 'adopter');
             document.getElementById('tab-admin').classList.toggle('hidden', user.role !== 'admin');
 
