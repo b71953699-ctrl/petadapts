@@ -79,6 +79,22 @@ async function initDatabase() {
     `, [hashedPassword]);
     console.log('✅ Default admin user created (username: admin, password: admin123)');
 
+    // Insert default staff user (password: staff123)
+    const staffPassword = await bcrypt.hash('staff123', 10);
+    await connection.query(`
+      INSERT IGNORE INTO users (username, password, email, role)
+      VALUES ('staff', ?, 'staff@petadoption.com', 'staff')
+    `, [staffPassword]);
+    console.log('✅ Default staff user created (username: staff, password: staff123)');
+
+    // Insert default adopter user (password: adopter123)
+    const adopterPassword = await bcrypt.hash('adopter123', 10);
+    await connection.query(`
+      INSERT IGNORE INTO users (username, password, email, role)
+      VALUES ('adopter', ?, 'adopter@petadoption.com', 'adopter')
+    `, [adopterPassword]);
+    console.log('✅ Default adopter user created (username: adopter, password: adopter123)');
+
     console.log('\n🎉 Database initialization complete!');
     process.exit(0);
   } catch (error) {

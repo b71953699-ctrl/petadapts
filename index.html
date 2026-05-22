@@ -19,9 +19,10 @@
         .auth-container h2 { margin-bottom: 20px; text-align: center; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
         button.btn-primary { background: #3498db; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; width: 100%; }
         button.btn-primary:hover { background: #2980b9; }
+        button.btn-green { background: #27ae60; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; width: 100%; margin-top: 10px; }
 
         /* Navigation Tabs */
         .nav-tabs { background: white; display: flex; border-bottom: 2px solid #ddd; margin-top: 20px; }
@@ -42,13 +43,15 @@
         .btn-adopt { background: #27ae60; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; margin-top: 10px; width: 100%; }
 
         /* Tables */
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 10px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #34495e; color: white; }
         tr:hover { background: #f8f9fa; }
         .action-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         .action-btn.approve { background: #27ae60; color: white; }
         .action-btn.reject { background: #e74c3c; color: white; }
+        .action-btn.edit { background: #3498db; color: white; }
+        .action-btn.delete { background: #e74c3c; color: white; }
 
         /* Alert */
         .alert { padding: 15px; border-radius: 4px; margin: 10px 0; display: none; }
@@ -61,9 +64,18 @@
         .stat-card h4 { color: #7f8c8d; font-size: 0.9rem; }
         .stat-card .number { font-size: 2rem; font-weight: bold; color: #2c3e50; }
 
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal.hidden { display: none; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-content h2 { margin-bottom: 10px; }
+        .modal-content p { margin-bottom: 20px; color: #666; }
+        .btn-secondary { background: #95a5a6; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; width: 100%; margin-top: 10px; }
+
         .hidden { display: none !important; }
         .text-center { text-align: center; }
         .mt-20 { margin-top: 20px; }
+        .mb-20 { margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -81,7 +93,7 @@
         <div class="auth-container">
             <h2>Login</h2>
             <div id="login-alert" class="alert"></div>
-            <form onsubmit="handleLogin(event)">
+            <form id="login-form">
                 <div class="form-group">
                     <label>Username</label>
                     <input type="text" id="login-username" required>
@@ -92,7 +104,7 @@
                 </div>
                 <button type="submit" class="btn-primary">Login</button>
             </form>
-            <p class="text-center mt-20">Demo: admin / admin123</p>
+            <p class="text-center mt-20">Demo accounts:<br>admin/admin123<br>staff/staff123<br>adopter/adopter123</p>
         </div>
     </div>
 
@@ -114,7 +126,7 @@
             <div id="pets-grid" class="pet-grid"></div>
         </div>
 
-        <!-- My Requests -->
+        <!-- My Requests (Adopter) -->
         <div id="section-my-requests" class="section">
             <h2>My Adoption Requests</h2>
             <div id="my-requests-list"></div>
@@ -126,35 +138,54 @@
 
             <div class="stats" id="staff-stats"></div>
 
-            <h3 class="mt-20">Add New Pet</h3>
-            <form onsubmit="handleAddPet(event)" class="mt-20" style="max-width: 500px;">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="pet-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="pet-type" required>
-                        <option value="Dog">Dog</option>
-                        <option value="Cat">Cat</option>
-                        <option value="Bird">Bird</option>
-                        <option value="Rabbit">Rabbit</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Breed</label>
-                    <input type="text" id="pet-breed" required>
-                </div>
-                <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" id="pet-age" min="0" required>
-                </div>
-                <button type="submit" class="btn-primary">Add Pet</button>
-            </form>
+            <!-- Nav tabs for staff sections -->
+            <div class="nav-tabs" style="margin-top: 20px;">
+                <button class="active" onclick="showStaffSection('add-pet')">Add Pet</button>
+                <button onclick="showStaffSection('view-pets')">View Pets</button>
+                <button onclick="showStaffSection('adoption-requests')">Adoption Requests</button>
+            </div>
 
-            <h3 class="mt-20">Adoption Requests</h3>
-            <div id="staff-requests"></div>
+            <!-- Add Pet Section -->
+            <div id="staff-add-pet" class="staff-sub-section active">
+                <h3 class="mt-20 mb-20">Add New Pet</h3>
+                <form id="add-pet-form" style="max-width: 500px; background: white; padding: 20px; border-radius: 8px;">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="pet-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="pet-type" required>
+                            <option value="Dog">Dog</option>
+                            <option value="Cat">Cat</option>
+                            <option value="Bird">Bird</option>
+                            <option value="Rabbit">Rabbit</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Breed</label>
+                        <input type="text" id="pet-breed" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" id="pet-age" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Pet</button>
+                </form>
+            </div>
+
+            <!-- View Pets Section -->
+            <div id="staff-view-pets" class="staff-sub-section hidden">
+                <h3 class="mt-20 mb-20">Manage Pets</h3>
+                <div id="staff-pets-list"></div>
+            </div>
+
+            <!-- Adoption Requests Section -->
+            <div id="staff-adoption-requests" class="staff-sub-section hidden">
+                <h3 class="mt-20 mb-20">Adoption Requests</h3>
+                <div id="staff-requests"></div>
+            </div>
         </div>
 
         <!-- Admin Panel -->
@@ -163,87 +194,162 @@
 
             <div class="stats" id="admin-stats"></div>
 
-            <h3 class="mt-20">Manage Users</h3>
+            <h3 class="mt-20 mb-20">Manage Users</h3>
             <div id="admin-users"></div>
 
-            <h3 class="mt-20">Manage Pets</h3>
+            <h3 class="mt-20 mb-20">Manage Pets</h3>
             <div id="admin-pets"></div>
+        </div>
+    </div>
+
+    <!-- Adoption Form Modal -->
+    <div id="adoption-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Adoption Application</h2>
+            <p id="modal-pet-info"></p>
+            <form id="adoption-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="adopt-fullname" required>
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="adopt-address" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="adopt-phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Why do you want to adopt this pet?</label>
+                    <textarea id="adopt-reason" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Do you have other pets?</label>
+                    <select id="adopt-other-pets" required>
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Do you have children at home?</label>
+                    <select id="adopt-children" required>
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Employment Status</label>
+                    <input type="text" id="adopt-employment" required>
+                </div>
+                <button type="submit" class="btn-green">Submit Application</button>
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+            </form>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:3000/api';
+
+        // Global variables
         let token = localStorage.getItem('token');
         let user = JSON.parse(localStorage.getItem('user') || 'null');
         let allPets = [];
+        let selectedPetId = null;
 
-        // Initialize
-        if (token && user) {
-            showDashboard();
-        }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup login form
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('add-pet-form').addEventListener('submit', handleAddPet);
+            document.getElementById('adoption-form').addEventListener('submit', handleAdoptionForm);
 
-        // Show dashboard
-        function showDashboard() {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
-            document.getElementById('user-display').textContent = `${user.username} (${user.role})`;
-            document.getElementById('user-display').classList.remove('hidden');
-            document.getElementById('logout-btn').classList.remove('hidden');
+            // Check if already logged in
+            if (token && user) {
+                showDashboard();
+            }
+        });
 
-            // Show appropriate tabs
-            document.getElementById('tab-my-requests').classList.toggle('hidden', user.role === 'shelter_staff');
-            document.getElementById('tab-staff').classList.toggle('hidden', user.role === 'adopter');
-            document.getElementById('tab-admin').classList.toggle('hidden', user.role !== 'admin');
-
-            loadPets();
-            if (user.role !== 'adopter') loadStaffData();
-            if (user.role === 'admin') loadAdminData();
-        }
-
-        // Login
+        // Login function
         async function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
 
+            console.log('Attempting login for:', username);
+
             try {
-                const res = await fetch(`${API_URL}/auth/login`, {
+                const res = await fetch(API_URL + '/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
+                console.log('Response status:', res.status);
                 const data = await res.json();
+                console.log('Response data:', data);
 
                 if (res.ok) {
+                    // Save to localStorage
                     token = data.token;
                     user = data.user;
                     localStorage.setItem('token', token);
                     localStorage.setItem('user', JSON.stringify(user));
+                    console.log('Login success, showing dashboard');
+
+                    // Redirect to dashboard
                     showDashboard();
                 } else {
-                    showAlert('login-alert', data.error, 'error');
+                    showAlert('login-alert', data.error || 'Login failed', 'error');
                 }
             } catch (err) {
-                showAlert('login-alert', 'Connection error', 'error');
+                console.error('Login error:', err);
+                showAlert('login-alert', 'Connection error: ' + err.message, 'error');
             }
         }
 
-        // Logout
+        // Logout function
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             location.reload();
         }
 
+        // Show dashboard
+        function showDashboard() {
+            // Hide login, show dashboard
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+
+            // Show user info
+            document.getElementById('user-display').textContent = user.username + ' (' + user.role + ')';
+            document.getElementById('user-display').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+
+            // Show role-specific tabs
+            document.getElementById('tab-my-requests').classList.toggle('hidden', user.role === 'shelter_staff');
+            document.getElementById('tab-staff').classList.toggle('hidden', user.role === 'adopter');
+            document.getElementById('tab-admin').classList.toggle('hidden', user.role !== 'admin');
+
+            // Load data
+            loadPets();
+            if (user.role === 'staff' || user.role === 'admin') {
+                loadStaffStats();
+                loadStaffRequests();
+            }
+            if (user.role === 'admin') {
+                loadAdminData();
+            }
+        }
+
         // Load pets
         async function loadPets() {
             try {
-                const res = await fetch(`${API_URL}/pets`);
+                const res = await fetch(API_URL + '/pets');
                 const data = await res.json();
                 allPets = data.pets || [];
                 renderPets(allPets);
             } catch (err) {
-                console.error('Failed to load pets');
+                console.error('Failed to load pets:', err);
             }
         }
 
@@ -254,10 +360,12 @@
                 <div class="pet-card">
                     <h3>${pet.name}</h3>
                     <p><strong>Type:</strong> ${pet.type}</p>
-                    <p><strong>Breed:</strong> ${pet.breed}</p>
-                    <p><strong>Age:</strong> ${pet.age} years</p>
+                    <p><strong>Breed:</strong> ${pet.breed || 'N/A'}</p>
+                    <p><strong>Age:</strong> ${pet.age || 'N/A'} years</p>
                     <p><span class="status ${pet.status}">${pet.status}</span></p>
-                    ${pet.status === 'available' && user?.role === 'adopter' ? `<button class="btn-adopt" onclick="submitRequest(${pet.petId})">Request Adoption</button>` : ''}
+                    ${pet.status === 'available' && user && user.role === 'adopter' ?
+                        '<button class="btn-adopt" onclick="openAdoptionModal(' + pet.petId + ', \'' + pet.name + '\')">Request Adoption</button>'
+                        : ''}
                 </div>
             `).join('');
         }
@@ -268,25 +376,54 @@
             const filtered = allPets.filter(p =>
                 p.name.toLowerCase().includes(search) ||
                 p.type.toLowerCase().includes(search) ||
-                p.breed.toLowerCase().includes(search)
+                (p.breed && p.breed.toLowerCase().includes(search))
             );
             renderPets(filtered);
         }
 
-        // Submit adoption request
-        async function submitRequest(petId) {
+        // Open adoption modal
+        function openAdoptionModal(petId, petName) {
+            selectedPetId = petId;
+            document.getElementById('modal-pet-info').textContent = 'You are applying to adopt: ' + petName;
+            document.getElementById('adoption-modal').classList.remove('hidden');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('adoption-modal').classList.add('hidden');
+            selectedPetId = null;
+        }
+
+        // Handle adoption form submission
+        async function handleAdoptionForm(e) {
+            e.preventDefault();
+            if (!selectedPetId) return;
+
             try {
-                const res = await fetch(`${API_URL}/adoptions`, {
+                const res = await fetch(API_URL + '/adoptions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ petId })
+                    body: JSON.stringify({
+                        petId: selectedPetId,
+                        notes: 'Full Name: ' + document.getElementById('adopt-fullname').value +
+                               '\nAddress: ' + document.getElementById('adopt-address').value +
+                               '\nPhone: ' + document.getElementById('adopt-phone').value +
+                               '\nReason: ' + document.getElementById('adopt-reason').value +
+                               '\nOther Pets: ' + document.getElementById('adopt-other-pets').value +
+                               '\nChildren: ' + document.getElementById('adopt-children').value +
+                               '\nEmployment: ' + document.getElementById('adopt-employment').value
+                    })
                 });
+
                 if (res.ok) {
-                    alert('Request submitted!');
+                    alert('Application submitted successfully!');
+                    closeModal();
+                    document.getElementById('adoption-form').reset();
                     loadPets();
+                    loadMyRequests();
                 } else {
                     const data = await res.json();
                     alert(data.error || 'Failed to submit request');
@@ -296,89 +433,202 @@
             }
         }
 
-        // Load my requests
+        // Load my requests (for adopters)
         async function loadMyRequests() {
             try {
-                const res = await fetch(`${API_URL}/adoptions/my-requests`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(API_URL + '/adoptions/my-requests', {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
                 const list = document.getElementById('my-requests-list');
-                list.innerHTML = data.requests?.length ?
-                    `<table><tr><th>Pet</th><th>Date</th><th>Status</th></tr>
-                    ${data.requests.map(r => `<tr><td>${r.petName}</td><td>${new Date(r.requestDate).toLocaleDateString()}</td><td>${r.status}</td></tr>`).join('')}
-                    </table>` : '<p>No adoption requests yet.</p>';
+
+                if (data.requests && data.requests.length > 0) {
+                    list.innerHTML = '<table><tr><th>Pet</th><th>Date</th><th>Status</th><th>Notice</th></tr>' +
+                        data.requests.map(r => '<tr><td><strong>' + r.petName + '</strong></td><td>' +
+                            new Date(r.requestDate).toLocaleDateString() + '</td><td><span class="status ' + r.status + '">' + r.status + '</span></td><td>' +
+                            (r.status === 'rejected' && r.processingNotes ? '<span style="color:red;">Rejection Reason: ' + r.processingNotes + '</span>' :
+                             r.status === 'approved' ? '<span style="color:green;">Congratulations! Your adoption has been approved!</span>' :
+                             r.status === 'pending' ? '<span style="color:orange;">Waiting for staff review...</span>' : '-') +
+                            '</td></tr>'
+                        ).join('') + '</table>';
+                } else {
+                    list.innerHTML = '<p>No adoption requests yet.</p>';
+                }
             } catch (err) {
                 console.error('Failed to load requests');
             }
         }
 
-        // Load staff data
-        async function loadStaffData() {
-            await Promise.all([loadStaffStats(), loadStaffRequests()]);
-        }
-
+        // Load staff stats
         async function loadStaffStats() {
             try {
-                const res = await fetch(`${API_URL}/staff/stats`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(API_URL + '/staff/stats', {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
-                document.getElementById('staff-stats').innerHTML = `
-                    <div class="stat-card"><h4>Total Pets</h4><div class="number">${data.totalPets || 0}</div></div>
-                    <div class="stat-card"><h4>Available</h4><div class="number">${data.availablePets || 0}</div></div>
-                    <div class="stat-card"><h4>Pending</h4><div class="number">${data.pendingRequests || 0}</div></div>
-                `;
+                document.getElementById('staff-stats').innerHTML =
+                    '<div class="stat-card"><h4>Total Pets</h4><div class="number">' + (data.totalPets || 0) + '</div></div>' +
+                    '<div class="stat-card"><h4>Available</h4><div class="number">' + (data.availablePets || 0) + '</div></div>' +
+                    '<div class="stat-card"><h4>Pending</h4><div class="number">' + (data.pendingRequests || 0) + '</div></div>';
             } catch (err) {}
         }
 
+        // Load staff requests
         async function loadStaffRequests() {
             try {
-                const res = await fetch(`${API_URL}/staff/adoption-requests`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(API_URL + '/staff/adoption-requests', {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
-                document.getElementById('staff-requests').innerHTML = data.requests?.length ?
-                    `<table><tr><th>Pet</th><th>Adopter</th><th>Date</th><th>Status</th><th>Actions</th></tr>
-                    ${data.requests.map(r => `<tr>
-                        <td>${r.petName}</td>
-                        <td>${r.username}</td>
-                        <td>${new Date(r.requestDate).toLocaleDateString()}</td>
-                        <td>${r.status}</td>
-                        <td>
-                            ${r.status === 'pending' ? `
-                                <button class="action-btn approve" onclick="handleRequest(${r.requestId}, 'approve')">Approve</button>
-                                <button class="action-btn reject" onclick="handleRequest(${r.requestId}, 'reject')">Reject</button>
-                            ` : '-'}
-                        </td>
-                    </tr>`).join('')}
-                    </table>` : '<p>No adoption requests.</p>';
-            } catch (err) {}
-        }
+                const container = document.getElementById('staff-requests');
 
-        // Handle adoption request
-        async function handleRequest(id, action) {
-            try {
-                const res = await fetch(`${API_URL}/staff/adoption-requests/${id}/${action}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    loadStaffRequests();
-                    loadStaffStats();
+                if (data.requests && data.requests.length > 0) {
+                    container.innerHTML = '<table><tr><th>Pet</th><th>Adopter</th><th>Date</th><th>Status</th><th>Application Details</th><th>Actions</th></tr>' +
+                        data.requests.map(r => '<tr><td><strong>' + r.petName + '</strong><br><small>(' + (r.petType || '') + ')</small></td><td>' + r.username + '</td><td>' +
+                            new Date(r.requestDate).toLocaleDateString() + '</td><td><span class="status ' + r.status + '">' + r.status + '</span></td><td><small>' + (r.notes || 'No details').replace(/\n/g, '<br>') + '</small></td><td>' +
+                            (r.status === 'pending' ?
+                                '<button class="action-btn approve" onclick="handleRequest(' + r.requestId + ', \'approve\')">Approve</button><br>' +
+                                '<button class="action-btn reject" onclick="showRejectDialog(' + r.requestId + ')">Reject</button>'
+                                : (r.status === 'rejected' && r.processingNotes ? '<small>Reason: ' + r.processingNotes + '</small>' : '-')) + '</td></tr>'
+                        ).join('') + '</table>';
+                } else {
+                    container.innerHTML = '<p>No adoption requests.</p>';
                 }
             } catch (err) {}
         }
 
-        // Add pet
+        // Show staff sub-section
+        function showStaffSection(section) {
+            document.querySelectorAll('.staff-sub-section').forEach(function(s) {
+                s.classList.add('hidden');
+                s.classList.remove('active');
+            });
+            document.querySelectorAll('#section-staff .nav-tabs button').forEach(function(b) {
+                b.classList.remove('active');
+            });
+
+            document.getElementById('staff-' + section).classList.remove('hidden');
+            document.getElementById('staff-' + section).classList.add('active');
+            event.target.classList.add('active');
+
+            if (section === 'view-pets') {
+                loadStaffPets();
+            } else if (section === 'adoption-requests') {
+                loadStaffRequests();
+            }
+        }
+
+        // Load staff pets
+        async function loadStaffPets() {
+            try {
+                const res = await fetch(API_URL + '/pets');
+                const data = await res.json();
+                const container = document.getElementById('staff-pets-list');
+
+                if (data.pets && data.pets.length > 0) {
+                    container.innerHTML = '<table><tr><th>ID</th><th>Name</th><th>Type</th><th>Breed</th><th>Age</th><th>Status</th><th>Actions</th></tr>' +
+                        data.pets.map(p => '<tr><td>' + p.petId + '</td><td><strong>' + p.name + '</strong></td><td>' + p.type + '</td><td>' + (p.breed || 'N/A') + '</td><td>' + (p.age || 'N/A') + '</td><td><span class="status ' + p.status + '">' + p.status + '</span></td><td>' +
+                            '<button class="action-btn edit" onclick="showEditPetDialog(' + p.petId + ', \'' + p.name + '\', \'' + p.type + '\', \'' + (p.breed || '') + '\', ' + (p.age || 0) + ', \'' + p.status + '\')">Edit</button>' +
+                            '</td></tr>'
+                        ).join('') + '</table>';
+                } else {
+                    container.innerHTML = '<p>No pets found.</p>';
+                }
+            } catch (err) {}
+        }
+
+        // Show edit pet dialog
+        function showEditPetDialog(id, name, type, breed, age, status) {
+            const container = document.getElementById('staff-pets-list');
+            container.innerHTML = '<div style="max-width: 500px; background: white; padding: 20px; border-radius: 8px; margin-top: 10px;">' +
+                '<h3>Edit Pet: ' + name + '</h3>' +
+                '<form id="edit-pet-form" onsubmit="handleEditPet(event, ' + id + ')">' +
+                '<div class="form-group"><label>Name</label><input type="text" id="edit-pet-name" value="' + name + '" required></div>' +
+                '<div class="form-group"><label>Type</label><select id="edit-pet-type" required>' +
+                '<option value="Dog"' + (type === 'Dog' ? ' selected' : '') + '>Dog</option>' +
+                '<option value="Cat"' + (type === 'Cat' ? ' selected' : '') + '>Cat</option>' +
+                '<option value="Bird"' + (type === 'Bird' ? ' selected' : '') + '>Bird</option>' +
+                '<option value="Rabbit"' + (type === 'Rabbit' ? ' selected' : '') + '>Rabbit</option>' +
+                '<option value="Other"' + (type === 'Other' ? ' selected' : '') + '>Other</option></select></div>' +
+                '<div class="form-group"><label>Breed</label><input type="text" id="edit-pet-breed" value="' + breed + '"></div>' +
+                '<div class="form-group"><label>Age</label><input type="number" id="edit-pet-age" value="' + age + '" min="0"></div>' +
+                '<div class="form-group"><label>Status</label><select id="edit-pet-status" required>' +
+                '<option value="available"' + (status === 'available' ? ' selected' : '') + '>Available</option>' +
+                '<option value="pending"' + (status === 'pending' ? ' selected' : '') + '>Pending</option>' +
+                '<option value="adopted"' + (status === 'adopted' ? ' selected' : '') + '>Adopted</option>' +
+                '<option value="unavailable"' + (status === 'unavailable' ? ' selected' : '') + '>Unavailable</option></select></div>' +
+                '<button type="submit" class="btn-primary">Save Changes</button> ' +
+                '<button type="button" class="btn-secondary" onclick="loadStaffPets()">Cancel</button></form></div>';
+        }
+
+        // Handle edit pet
+        async function handleEditPet(e, id) {
+            e.preventDefault();
+            try {
+                const res = await fetch(API_URL + '/staff/pets/' + id, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        name: document.getElementById('edit-pet-name').value,
+                        type: document.getElementById('edit-pet-type').value,
+                        breed: document.getElementById('edit-pet-breed').value,
+                        age: parseInt(document.getElementById('edit-pet-age').value),
+                        status: document.getElementById('edit-pet-status').value
+                    })
+                });
+                if (res.ok) {
+                    alert('Pet updated successfully!');
+                    loadStaffPets();
+                    loadPets();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to update pet');
+                }
+            } catch (err) {
+                alert('Failed to update pet');
+            }
+        }
+
+        // Show reject dialog
+        function showRejectDialog(requestId) {
+            const reason = prompt('Please provide a reason for rejection:');
+            if (reason !== null) {
+                handleRequest(requestId, 'reject', reason);
+            }
+        }
+
+        // Handle approve/reject request
+        async function handleRequest(id, action, reason) {
+            try {
+                const body = reason ? JSON.stringify({ notes: reason }) : '{}';
+                const res = await fetch(API_URL + '/staff/adoption-requests/' + id + '/' + action, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: body
+                });
+                if (res.ok) {
+                    loadStaffRequests();
+                    loadStaffStats();
+                    loadPets();
+                }
+            } catch (err) {}
+        }
+
+        // Handle add pet
         async function handleAddPet(e) {
             e.preventDefault();
             try {
-                const res = await fetch(`${API_URL}/staff/pets`, {
+                const res = await fetch(API_URL + '/staff/pets', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify({
                         name: document.getElementById('pet-name').value,
@@ -388,53 +638,84 @@
                     })
                 });
                 if (res.ok) {
-                    alert('Pet added!');
-                    e.target.reset();
-                    loadStaffData();
+                    alert('Pet added successfully!');
+                    document.getElementById('add-pet-form').reset();
+                    loadPets();
+                    loadStaffStats();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to add pet');
                 }
-            } catch (err) {}
+            } catch (err) {
+                alert('Failed to add pet');
+            }
         }
 
         // Load admin data
         async function loadAdminData() {
             try {
-                const [usersRes, statsRes] = await Promise.all([
-                    fetch(`${API_URL}/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                    fetch(`${API_URL}/admin/reports`, { headers: { 'Authorization': `Bearer ${token}` } })
+                const [usersRes, statsRes, petsRes] = await Promise.all([
+                    fetch(API_URL + '/admin/users', { headers: { 'Authorization': 'Bearer ' + token } }),
+                    fetch(API_URL + '/admin/reports', { headers: { 'Authorization': 'Bearer ' + token } }),
+                    fetch(API_URL + '/pets', { headers: { 'Authorization': 'Bearer ' + token } })
                 ]);
+
                 const users = await usersRes.json();
                 const stats = await statsRes.json();
+                const pets = await petsRes.json();
 
-                document.getElementById('admin-stats').innerHTML = `
-                    <div class="stat-card"><h4>Total Users</h4><div class="number">${stats.totalUsers || 0}</div></div>
-                    <div class="stat-card"><h4>Total Pets</h4><div class="number">${stats.totalPets || 0}</div></div>
-                    <div class="stat-card"><h4>Adoptions</h4><div class="number">${stats.totalAdoptions || 0}</div></div>
-                `;
+                // Stats
+                document.getElementById('admin-stats').innerHTML =
+                    '<div class="stat-card"><h4>Total Users</h4><div class="number">' + (stats.totalUsers || 0) + '</div></div>' +
+                    '<div class="stat-card"><h4>Total Pets</h4><div class="number">' + (stats.totalPets || 0) + '</div></div>' +
+                    '<div class="stat-card"><h4>Adoptions</h4><div class="number">' + (stats.totalAdoptions || 0) + '</div></div>';
 
-                document.getElementById('admin-users').innerHTML = users.users?.length ?
-                    `<table><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th></tr>
-                    ${users.users.map(u => `<tr><td>${u.userId}</td><td>${u.username}</td><td>${u.email}</td><td>${u.role}</td></tr>`).join('')}
-                    </table>` : '';
+                // Users table
+                if (users.users && users.users.length > 0) {
+                    document.getElementById('admin-users').innerHTML = '<table><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th></tr>' +
+                        users.users.map(u => '<tr><td>' + u.userId + '</td><td>' + u.username + '</td><td>' + u.email + '</td><td>' + u.role + '</td></tr>'
+                        ).join('') + '</table>';
+                }
+
+                // Pets table
+                if (pets.pets && pets.pets.length > 0) {
+                    document.getElementById('admin-pets').innerHTML = '<table><tr><th>ID</th><th>Name</th><th>Type</th><th>Breed</th><th>Age</th><th>Status</th></tr>' +
+                        pets.pets.map(p => '<tr><td>' + p.petId + '</td><td>' + p.name + '</td><td>' + p.type + '</td><td>' + (p.breed || 'N/A') + '</td><td>' + (p.age || 'N/A') + '</td><td>' + p.status + '</td></tr>'
+                        ).join('') + '</table>';
+                }
             } catch (err) {}
         }
 
         // Show section
         function showSection(name) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
-            document.getElementById(`section-${name}`).classList.add('active');
+            document.querySelectorAll('.section').forEach(function(s) {
+                s.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tabs button').forEach(function(b) {
+                b.classList.remove('active');
+            });
+
+            document.getElementById('section-' + name).classList.add('active');
             event.target.classList.add('active');
 
+            // Load data for specific sections
             if (name === 'my-requests') loadMyRequests();
+            if (name === 'staff') {
+                loadStaffStats();
+                loadStaffRequests();
+            }
+            if (name === 'admin') loadAdminData();
         }
 
         // Show alert
         function showAlert(id, msg, type) {
-            const el = document.getElementById(id);
+            var el = document.getElementById(id);
             el.textContent = msg;
-            el.className = `alert ${type}`;
+            el.className = 'alert ' + type;
             el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 3000);
+            setTimeout(function() {
+                el.style.display = 'none';
+            }, 5000);
         }
     </script>
 </body>

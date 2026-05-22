@@ -129,9 +129,15 @@ router.post('/adoption-requests/:id/reject', async (req, res) => {
     const { notes } = req.body;
 
     await db.query(
-      "UPDATE adoption_requests SET status = 'rejected', processedBy = ?, processedAt = NOW(), notes = ? WHERE requestId = ?",
+      "UPDATE adoption_requests SET status = 'rejected', processedBy = ?, processedAt = NOW(), processingNotes = ? WHERE requestId = ?",
       [req.user.userId, notes || null, id]
     );
+
+    // Reset pet status to available when rejected
+    const [requests] = await db.query('SELECT petId FROM adoption_requests WHERE requestId = ?', [id]);
+    if (requests.length > 0) {
+      await db.query("UPDATE pets SET status = 'available' WHERE petId = ?", [requests[0].petId]);
+    }
 
     res.json({ message: 'Adoption request rejected' });
   } catch (error) {

@@ -15,7 +15,7 @@ router.post('/', auth, authorize('adopter', 'admin'), [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { petId } = req.body;
+    const { petId, notes } = req.body;
 
     // Check if pet exists and is available
     const [pets] = await db.query('SELECT * FROM pets WHERE petId = ?', [petId]);
@@ -28,7 +28,7 @@ router.post('/', auth, authorize('adopter', 'admin'), [
 
     // Check for existing pending request
     const [existing] = await db.query(
-      'SELECT * FROM adoption_requests WHERE petId = ? AND adopterId = ? AND status = "pending"',
+      "SELECT * FROM adoption_requests WHERE petId = ? AND adopterId = ? AND status = 'pending'",
       [petId, req.user.userId]
     );
     if (existing.length > 0) {
@@ -36,8 +36,8 @@ router.post('/', auth, authorize('adopter', 'admin'), [
     }
 
     const [result] = await db.query(
-      'INSERT INTO adoption_requests (adopterId, petId) VALUES (?, ?)',
-      [req.user.userId, petId]
+      'INSERT INTO adoption_requests (adopterId, petId, notes) VALUES (?, ?, ?)',
+      [req.user.userId, petId, notes || null]
     );
 
     // Update pet status to pending

@@ -15,7 +15,9 @@ const adoptionRoutes = require('./routes/adoption');
 const app = express();
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false // Disable CSP to allow inline scripts
+}));
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
@@ -24,6 +26,9 @@ app.use(cors({
 // Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static HTML files
+app.use(express.static('.'));
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -63,6 +68,7 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`🐾 Pet Adoption System running on port ${PORT}`);
+      console.log(`🔗 http://localhost:${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
@@ -70,6 +76,7 @@ async function startServer() {
     console.log('Starting server without database connection...');
     app.listen(PORT, () => {
       console.log(`🐾 Pet Adoption System running on port ${PORT} (DB not connected)`);
+      console.log(`🔗 http://localhost:${PORT}`);
     });
   }
 }
